@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/whoall-quarm/static/css/main.671b7aac.css",
+    "main.js": "/whoall-quarm/static/js/main.9925bceb.js",
+    "static/js/787.ce6340d0.chunk.js": "/whoall-quarm/static/js/787.ce6340d0.chunk.js",
+    "index.html": "/whoall-quarm/index.html",
+    "main.671b7aac.css.map": "/whoall-quarm/static/css/main.671b7aac.css.map",
+    "main.9925bceb.js.map": "/whoall-quarm/static/js/main.9925bceb.js.map",
+    "787.ce6340d0.chunk.js.map": "/whoall-quarm/static/js/787.ce6340d0.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.671b7aac.css",
+    "static/js/main.9925bceb.js"
+  ]
+}
