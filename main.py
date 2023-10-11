@@ -34,8 +34,9 @@ def setup_database(conn: sqlite3.Connection):
         name TEXT UNIQUE,
         race TEXT,
         zone TEXT,
-        guild TEXT,        -- New column for the guild
-        lfg INTEGER DEFAULT 0  -- New column for LFG, default to 0 (false)
+        guild TEXT,
+        lfg INTEGER DEFAULT 0,
+        last_updated TIMESTAMP  -- Add this line
     )
     ''')
     conn.commit()
@@ -43,6 +44,7 @@ def setup_database(conn: sqlite3.Connection):
 
 def upsert_player(conn: sqlite3.Connection, level: int, class_: str, name: str, race: str, guild: str, zone: str, lfg: int):
     cursor = conn.cursor()
+    now = datetime.now()
 
     # First, try to insert the record
     cursor.execute('''
@@ -53,9 +55,9 @@ def upsert_player(conn: sqlite3.Connection, level: int, class_: str, name: str, 
     # Then, update the existing record (if any)
     cursor.execute('''
     UPDATE players 
-    SET level = ?, class = ?, race = ?, guild = ?, zone = ?, lfg = ?
+    SET level = ?, class = ?, race = ?, guild = ?, zone = ?, lfg = ?, last_updated = ?
     WHERE name = ?
-    ''', (level, class_, race, guild, zone, lfg, name))
+    ''', (level, class_, race, guild, zone, lfg, now, name))
 
     print('Inserted or updated player:', name)
     conn.commit()
@@ -111,11 +113,35 @@ def setup_and_monitor_file(filepath):
     observer.join()
 
 
+def fetch_all_players(conn):
+    cursor = conn.cursor()
+    query = "SELECT level, class, name, race, guild, zone, lfg FROM players ORDER BY level DESC"
+    cursor.execute(query)
+    results = cursor.fetchall()
+    return results
+
+
+def copy_to_clipboard(conn):
+    data = fetch_all_players(conn)
+    formatted_data = [", ".join(map(str, row)) for row in data]
+    clipboard_data = "\n".join(formatted_data)
+
+    # Copying data to clipboard using tkinter
+    app = tk.Tk()
+    app.withdraw()
+    app.clipboard_clear()
+    app.clipboard_append(clipboard_data)
+    app.update()  # This is necessary in some cases to make clipboard work
+    app.destroy()
+
 def query_players(conn, level_start=None, level_end=None, class_=None, name=None, race=None, zone=None, guild=None, lfg=None):
     cursor = conn.cursor()
 
-    query = "SELECT level, class, name, race, guild, zone, lfg FROM players WHERE 1=1"
-    parameters = []
+    current_time = datetime.now()
+    time_limit = current_time - timedelta(minutes=10)
+
+    query = "SELECT level, class, name, race, guild, zone, lfg FROM players WHERE last_updated >= ?"
+    parameters = [time_limit]
 
     if level_start and level_end:
         query += " AND level BETWEEN ? AND ?"
@@ -244,7 +270,7 @@ class PlayerQueryApp:
 
         style.configure("TFrame", background=DARK_MODE_BG)
         style.configure("TLabel", background=DARK_MODE_BG, foreground=DARK_MODE_TEXT)
-        style.configure("TEntry", background=DARK_MODE_FIELD, foreground=DARK_MODE_TEXT)
+        style.configure("TEntry", background="#FFFFFF", foreground="#000000")
         style.configure("TButton", background=DARK_MODE_BTN, foreground=DARK_MODE_BTN_TEXT)
         style.configure("TCheckbutton", foreground=DARK_MODE_TEXT)
         style.configure('DarkMode.TCheckbutton', background=DARK_MODE_BG, foreground=DARK_MODE_TEXT,
@@ -311,7 +337,11 @@ class PlayerQueryApp:
         # Label to display the number of rows returned
         self.num_rows_label = ttk.Label(self.app, text="Number of rows: 0", background=DARK_MODE_BG,
                                         foreground=DARK_MODE_TEXT)
-        self.num_rows_label.grid(row=9, column=0, columnspan=2, pady=10)
+        self.num_rows_label.grid(row=9, column=0, columnspan=1, pady=10)
+
+        ttk.Button(self.app, text="Copy to Clipboard", command=lambda: copy_to_clipboard(self.conn)).grid(row=9,
+                                                                                                          column=1,
+                                                                                                          pady=10)
 
 
 def test_regex():
