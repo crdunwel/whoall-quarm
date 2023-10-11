@@ -2,6 +2,17 @@
   text-align: center;
 }
 
+body {
+  background-color: #ffffff;
+  color: #333333;
+}
+
+/* Dark Mode Styles */
+body.dark-mode {
+  background-color: #333333;
+  color: #f1f1f1;
+}
+
 .App-logo {
   height: 40vmin;
   pointer-events: none;
@@ -35,4 +46,88 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+
+th, td {
+  padding: 0 15px; /* 0 for top and bottom, 15px for left and right */
+}
+
+th, td {
+  text-align: left;
+}
+
+
+table {
+    margin: 20px auto;
+    /* If the table isn't naturally taking up the full width you want, you can add a width property. */
+    width: 100%; /* Adjust as necessary */
+}
+
+.form-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.input-group {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.input-group label {
+  display: flex;
+  flex-direction: column;
+  width: 48%; /* Allows for a tiny space between inputs */
+  font-weight: bold;
+  font-size: 0.9em;
+}
+
+.input-group input {
+  padding: 8px;
+  font-size: 0.9em;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 5px;
+}
+
+.submit-button {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.lfg-container {
+  display: flex;
+  align-items: flex-end; /* This will align the content to the bottom */
+  justify-content: flex-end;
+}
+
+.lfg-label {
+  margin-right: 0.5rem;
+  font-weight: bold;
+}
+
+#lfg-checkbox {
+  margin-right: 1.5rem; /* Increased margin for more space */
+}
+
+.submit-button {
+  background-color: #007bff;
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.submit-button:hover {
+  background-color: #0056b3;
 }

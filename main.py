@@ -7,7 +7,8 @@ from tkinter import ttk
 import time
 import os
 from datetime import datetime, timedelta
-
+import json
+import subprocess
 
 # Add imports at the beginning of your script
 import threading
@@ -61,6 +62,39 @@ def upsert_player(conn: sqlite3.Connection, level: int, class_: str, name: str, 
 
     print('Inserted or updated player:', name)
     conn.commit()
+
+
+def dump_db_to_json(conn, json_path):
+    # Connect to SQLite database
+    cursor = conn.cursor()
+
+    # Fetch all players
+    cursor.execute("SELECT * FROM players")
+    players = cursor.fetchall()
+
+    # Convert to list of dicts for easier JSON serialization
+    col_names = [desc[0] for desc in cursor.description]
+    players_list = [dict(zip(col_names, player)) for player in players]
+
+    output = {
+        "last_updated": time.time(),  # This will give the current timestamp in seconds since epoch
+        "data": players_list
+    }
+
+    # Dump to JSON file
+    with open(json_path, 'w') as f:
+        json.dump(output, f)
+
+    conn.close()
+
+
+def git_push(file_path, commit_message="Updated data"):
+    try:
+        subprocess.run(['git', 'add', file_path], check=True)
+        subprocess.run(['git', 'commit', '-m', commit_message], check=True)
+        subprocess.run(['git', 'push', 'origin', 'main'], check=True)  # Change to 'main'
+    except subprocess.CalledProcessError as e:
+        print(f"Error while pushing to Git: {e}")
 
 
 def parse_log(conn: sqlite3.Connection, log: str):
@@ -213,6 +247,13 @@ class PlayerQueryApp:
         self.app.geometry('{}x{}+{}+{}'.format(width, height, x, y))
         self.app.attributes("-topmost", True)
 
+    def on_upload(self):
+        # Specify your paths
+        json_path = 'data.json'
+
+        dump_db_to_json(self.conn, json_path)  # Dump in-memory database to a JSON file
+        git_push(json_path, 'Uploaded latest data from SQLite database')  # Push the JSON to Git
+
     def check_file_changes(self):
         if file_modified_event.is_set():
             with open(filepath, "r") as f:
@@ -339,9 +380,11 @@ class PlayerQueryApp:
                                         foreground=DARK_MODE_TEXT)
         self.num_rows_label.grid(row=9, column=0, columnspan=1, pady=10)
 
-        ttk.Button(self.app, text="Copy to Clipboard", command=lambda: copy_to_clipboard(self.conn)).grid(row=9,
-                                                                                                          column=1,
-                                                                                                          pady=10)
+        # ttk.Button(self.app, text="Copy to Clipboard", command=lambda: copy_to_clipboard(self.conn)).grid(row=10,
+        #                                                                                                   column=0,
+        #                                                                                                   pady=10)
+
+        ttk.Button(self.app, text="Upload", command=self.on_upload).grid(row=9, column=1, pady=10)
 
 
 def test_regex():
