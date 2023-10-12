@@ -118,12 +118,20 @@ def dump_db_to_json(conn, json_path):
     # Update the manifest
     update_manifest(filename)
 
-    conn.close()
+    git_add(archive_path)
+    git_add(MANIFEST_PATH)
+    git_add(archive_path)
+
+
+def git_add(file_path):
+    try:
+        subprocess.run(['git', 'add', file_path], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Error while adding to Git: {e}")
 
 
 def git_push(file_path, commit_message="Updated data"):
     try:
-        subprocess.run(['git', 'add', file_path], check=True)
         subprocess.run(['git', 'commit', '-m', commit_message], check=True)
         subprocess.run(['git', 'push', 'origin', 'main'], check=True)  # Change to 'main'
     except subprocess.CalledProcessError as e:
