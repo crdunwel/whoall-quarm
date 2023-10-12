@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import Select from 'react-select';
 import './App.css';
+
 
 function App() {
   const [darkMode, setDarkMode] = useState(true);
@@ -8,6 +10,8 @@ function App() {
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sort, setSort] = useState({ column: 'level', direction: 'asc' });
+  const [manifest, setManifest] = useState([]);
+  const [selectedDataFile, setSelectedDataFile] = useState(null);
   const [form, setForm] = useState({
     level_start: '',
     level_end: '',
@@ -21,8 +25,33 @@ function App() {
   });
 
   useEffect(() => {
-  document.body.classList.toggle('dark-mode', darkMode);
-}, [darkMode]);
+    document.body.classList.toggle('dark-mode', darkMode);
+    }, [darkMode]);
+
+  useEffect(() => {
+    // Fetch manifest data
+    async function fetchManifest() {
+        const url = 'https://raw.githubusercontent.com/crdunwel/whoall-quarm/main/data/manifest.json';
+        const response = await fetch(url);
+        const data = await response.json();
+
+        // Assuming that the last file in the manifest is the latest
+        const latest = data.pop();
+
+        // Convert to format suitable for react-select, and label the latest as "Latest"
+        setManifest([
+            { label: 'Latest', value: latest },
+            ...data.map(file => ({ label: file, value: file }))
+        ]);
+    }
+    fetchManifest();
+
+    // Set a timer to fetch manifest every 10 minutes (or whatever interval you prefer)
+    const manifestIntervalId = setInterval(fetchManifest, 10 * 60 * 1000);
+
+    // Clean up the interval on component unmount
+    return () => clearInterval(manifestIntervalId);
+  }, []);
 
     useEffect(() => {
         async function fetchData() {
@@ -47,6 +76,19 @@ function App() {
     const toggleDarkMode = () => {
       setDarkMode(!darkMode);
     };
+
+  // Handler when selecting a data file from react-select
+  const handleDataFileChange = async (selectedOption) => {
+    setSelectedDataFile(selectedOption);
+    if (selectedOption && selectedOption.value) {
+      const url = `https://raw.githubusercontent.com/crdunwel/whoall-quarm/main/data/${selectedOption.value}`;
+      const response = await fetch(url);
+      const jsonData = await response.json();
+      setData(jsonData.data);
+      setLastUpdatedDate(new Date(jsonData.last_updated * 1000));
+    }
+  }
+
   const handleSearch = () => {
       let filteredData = [...data];
 
@@ -108,7 +150,18 @@ function App() {
 
   return (
     <div className="App">
+      <div>
+        <Select
+          value={selectedDataFile}
+          onChange={handleDataFileChange}
+          options={manifest}
+          isSearchable={true} // This will allow users to search within the dropdown
+          placeholder="Select archived data..."
+        />
+      </div>
       <h1>Quarm Player Query</h1>
+
+
         <p>Data last updated: {lastUpdatedDate && lastUpdatedDate.toLocaleString()}</p>
 
         <button onClick={toggleDarkMode}>

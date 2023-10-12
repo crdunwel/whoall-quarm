@@ -66,6 +66,26 @@ def upsert_player(conn: sqlite3.Connection, level: int, class_: str, name: str, 
     conn.commit()
 
 
+MANIFEST_PATH = 'data/manifest.json'
+
+
+def update_manifest(filename):
+    # Check if manifest exists
+    if os.path.exists(MANIFEST_PATH):
+        with open(MANIFEST_PATH, 'r') as f:
+            manifest = json.load(f)
+    else:
+        manifest = []
+
+    # Append the new filename if it's not in the manifest
+    if filename not in manifest:
+        manifest.append(filename)
+
+    # Save the updated manifest
+    with open(MANIFEST_PATH, 'w') as f:
+        json.dump(manifest, f, indent=4)
+
+
 def dump_db_to_json(conn, json_path):
     # Connect to SQLite database
     cursor = conn.cursor()
@@ -87,16 +107,16 @@ def dump_db_to_json(conn, json_path):
     with open(json_path, 'w') as f:
         json.dump(output, f)
 
-    # Create 'data' directory if it doesn't exist
-    archive_directory = 'data'
-    if not os.path.exists(archive_directory):
-        os.makedirs(archive_directory)
+    # Get filename for archived data
+    lastUpdatedDate = datetime.fromtimestamp(output["last_updated"])
+    filename = lastUpdatedDate.strftime('%Y-%m-%d_%H-%M-%S.json')
+    archive_path = os.path.join('data', filename)
 
-    # Archive the existing data.json to the 'data' directory with a filename based on 'last_updated'
-    archive_filename = datetime.fromtimestamp(output["last_updated"]).strftime('%Y-%m-%d %H-%M-%S') + '.json'
-    shutil.copy2(json_path, os.path.join(archive_directory, archive_filename))
+    # Copy the current data.json to the archived filename
+    shutil.copy2(json_path, archive_path)
 
-    conn.close()
+    # Update the manifest
+    update_manifest(filename)
 
     conn.close()
 
@@ -122,7 +142,7 @@ def parse_log(conn: sqlite3.Connection, log: str):
             line_timestamp = datetime.strptime(timestamp_str, "%b %d %H:%M:%S %Y")
 
             # Check if the line timestamp is within the last 10 minutes
-            if now - line_timestamp <= timedelta(minutes=10):
+            if now - line_timestamp <= timedelta(minutes=30):
                 # Parse the player data
                 match = re.search(PATTERN, line)
                 if match:
