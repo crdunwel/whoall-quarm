@@ -120,7 +120,7 @@ def dump_db_to_json(conn, json_path):
 
     git_add(archive_path)
     git_add(MANIFEST_PATH)
-    git_add(archive_path)
+    git_add(json_path)
 
 
 def git_add(file_path):
@@ -130,7 +130,7 @@ def git_add(file_path):
         print(f"Error while adding to Git: {e}")
 
 
-def git_push(file_path, commit_message="Updated data"):
+def git_push(commit_message="Updated data"):
     try:
         subprocess.run(['git', 'commit', '-m', commit_message], check=True)
         subprocess.run(['git', 'push', 'origin', 'main'], check=True)  # Change to 'main'
@@ -150,7 +150,7 @@ def parse_log(conn: sqlite3.Connection, log: str):
             line_timestamp = datetime.strptime(timestamp_str, "%b %d %H:%M:%S %Y")
 
             # Check if the line timestamp is within the last 10 minutes
-            if now - line_timestamp <= timedelta(minutes=30):
+            if now - line_timestamp <= timedelta(minutes=15):
                 # Parse the player data
                 match = re.search(PATTERN, line)
                 if match:
@@ -293,7 +293,7 @@ class PlayerQueryApp:
         json_path = 'data.json'
 
         dump_db_to_json(self.conn, json_path)  # Dump in-memory database to a JSON file
-        git_push(json_path, 'Uploaded latest data from SQLite database')  # Push the JSON to Git
+        git_push('Uploaded latest data from SQLite database')  # Push the JSON to Git
 
     def check_file_changes(self):
         if file_modified_event.is_set():
