@@ -9,6 +9,8 @@ import os
 from datetime import datetime, timedelta
 import json
 import subprocess
+import shutil  # Add this import at the beginning
+
 
 # Add imports at the beginning of your script
 import threading
@@ -84,6 +86,17 @@ def dump_db_to_json(conn, json_path):
     # Dump to JSON file
     with open(json_path, 'w') as f:
         json.dump(output, f)
+
+    # Create 'data' directory if it doesn't exist
+    archive_directory = 'data'
+    if not os.path.exists(archive_directory):
+        os.makedirs(archive_directory)
+
+    # Archive the existing data.json to the 'data' directory with a filename based on 'last_updated'
+    archive_filename = datetime.fromtimestamp(output["last_updated"]).strftime('%Y-%m-%d %H-%M-%S') + '.json'
+    shutil.copy2(json_path, os.path.join(archive_directory, archive_filename))
+
+    conn.close()
 
     conn.close()
 

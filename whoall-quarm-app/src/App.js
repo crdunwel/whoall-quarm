@@ -69,7 +69,9 @@ function App() {
         filteredData = filteredData.filter(player => player.zone.toLowerCase() === form.zone.toLowerCase());
       }
       if (form.lfg) {
-        filteredData = filteredData.filter(player => player.lfg === form.lfg);
+        filteredData = filteredData.filter(player => player.lfg === 1);
+      } else {
+        filteredData = filteredData.filter(player => player.lfg === 0);
       }
       setSearchResults(filteredData);
   };
@@ -164,7 +166,7 @@ function App() {
         {/*  <button onClick={handleSearch}>Search</button>*/}
         {/*</div>*/}
       </div>
-
+     <p>{searchResults.length} results found.</p>
       <table>
         <thead>
           <tr>
